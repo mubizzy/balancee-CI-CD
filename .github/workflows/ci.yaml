@@ -27,8 +27,20 @@ jobs:
       - name: Run Tests
         run: npm test
       
-      - name: Deploy to Staging
+      - name: Deploy to AWS Elastic Beanstalk
         if: success()
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          echo "Deploying to staging environment..."
-          # Add your deployment commands her
+          echo "Deploying to AWS Elastic Beanstalk..."
+          zip -r application.zip .
+          aws elasticbeanstalk create-application-version \
+            --application-name YourAppName \
+            --version-label v1.0.0-${{ github.sha }} \
+            --source-bundle S3Bucket="elasticbeanstalk-${{ secrets.AWS_REGION }}-your-app-bucket",S3Key="application.zip"
+
+          aws elasticbeanstalk update-environment \
+            --environment-name YourEnvironmentName \
+            --version-label v1.0.0-${{ github.sha }}
